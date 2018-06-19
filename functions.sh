@@ -153,9 +153,6 @@ function setup_package_build() {
 
   cd $SOURCE_DIR/source/$PKG_NAME
 
-  LOCAL_INSTALL=$BUILD_DIR/${PKG_NAME}-${PKG_VERSION}${PATCH_VERSION}
-  BUILD_LOG=$SOURCE_DIR/check/${PKG_NAME}-${PKG_VERSION}${PATCH_VERSION}.log
-
   # Extract the sources
   if [ ! -z "$ARCHIVE" ]; then
     extract_archive $ARCHIVE
@@ -207,7 +204,20 @@ function setup_package_build() {
     FINAL_DIR=$PKG_NAME
   fi
 
-  pushd $FINAL_DIR
+  setup_extracted_package_build $PKG_NAME $PKG_VERSION $FINAL_DIR
+}
+
+function setup_extracted_package_build() {
+  local PKG_NAME=$1
+  local PKG_VERSION=$2
+  local DIR_NAME=$3
+
+  LOCAL_INSTALL=$BUILD_DIR/${PKG_NAME}-${PKG_VERSION}${PATCH_VERSION}
+  BUILD_LOG=$SOURCE_DIR/check/${PKG_NAME}-${PKG_VERSION}${PATCH_VERSION}.log
+
+  # The specified directory is relative to the package source directory
+  cd $SOURCE_DIR/source/$PKG_NAME
+  pushd $DIR_NAME
 
   # Apply patches for this package
   if [[ -n "$PATCH_VERSION" ]]; then
@@ -218,20 +228,20 @@ function setup_package_build() {
     # Once the patches are applied, move the directory to the correct name
     # with the patch level in the name
     popd
-    if [[ -d $FINAL_DIR$PATCH_VERSION ]]; then
+    if [[ -d $DIR_NAME$PATCH_VERSION ]]; then
       # Move away old directory from previous run
       i=0
       while true; do
-        if [[ -d $FINAL_DIR$PATCH_VERSION.bak$i ]]; then
+        if [[ -d $DIR_NAME$PATCH_VERSION.bak$i ]]; then
           ((++i))
           continue
         fi
-        mv $FINAL_DIR$PATCH_VERSION $FINAL_DIR$PATCH_VERSION.bak$i
+        mv $DIR_NAME$PATCH_VERSION $DIR_NAME$PATCH_VERSION.bak$i
         break
       done
     fi
-    mv $FINAL_DIR $FINAL_DIR$PATCH_VERSION
-    pushd $FINAL_DIR$PATCH_VERSION
+    mv $DIR_NAME $DIR_NAME$PATCH_VERSION
+    pushd $DIR_NAME$PATCH_VERSION
   fi
 }
 
